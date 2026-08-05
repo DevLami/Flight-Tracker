@@ -46,4 +46,3 @@ src/
   hooks/         atualização periódica dos voos
   types/         tipos usados pela API e pela interface
 ```
-
