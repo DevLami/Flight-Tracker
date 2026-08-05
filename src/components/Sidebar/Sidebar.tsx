@@ -1,55 +1,83 @@
 import "./Sidebar.css";
+import type { Aircraft } from "../../types/opensky";
 
-interface FlightMock {
-  callsign: string;
-  aircraft: string;
-  origin: string;
-  destination: string;
-  altitude: string;
-  speed: string;
-  status: "em-voo" | "pousado" | "atrasado";
+const MAX_LISTED = 15;
+
+interface SidebarProps {
+  aircraft: Aircraft[];
+  center: { lat: number; lng: number };
+  loading: boolean;
+  error: string | null;
+  lastUpdated: Date | null;
 }
 
-// Dados fictícios apenas para validar o layout — sem integração ainda.
-const MOCK_FLIGHTS: FlightMock[] = [
-  { callsign: "TAM3402", aircraft: "E195-E2", origin: "SBSP", destination: "SBRJ", altitude: "37.000 ft", speed: "452 kt", status: "em-voo" },
-  { callsign: "AZU4108", aircraft: "E190", origin: "SBKP", destination: "SBCF", altitude: "34.500 ft", speed: "418 kt", status: "em-voo" },
-  { callsign: "GLO1745", aircraft: "B737-800", origin: "SBGR", destination: "SBPA", altitude: "0 ft", speed: "0 kt", status: "pousado" },
-  { callsign: "TAM8821", aircraft: "E175", origin: "SBBR", destination: "SBSV", altitude: "—", speed: "—", status: "atrasado" },
-];
+// Distância aproximada em km entre duas coordenadas (fórmula de Haversine).
+function distanceKm(a: { lat: number; lng: number }, b: { latitude: number; longitude: number }) {
+  const R = 6371;
+  const dLat = ((b.latitude - a.lat) * Math.PI) / 180;
+  const dLon = ((b.longitude - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.latitude * Math.PI) / 180;
 
-const STATUS_LABEL: Record<FlightMock["status"], string> = {
-  "em-voo": "Em voo",
-  pousado: "Pousado",
-  atrasado: "Atrasado",
-};
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
 
-export default function Sidebar() {
+function formatAltitude(meters: number | null) {
+  if (meters === null) return "—";
+  return `${Math.round(meters * 3.28084).toLocaleString("pt-BR")} ft`;
+}
+
+function formatSpeed(mps: number | null) {
+  if (mps === null) return "—";
+  return `${Math.round(mps * 1.94384)} kt`;
+}
+
+export default function Sidebar({ aircraft, center, loading, error, lastUpdated }: SidebarProps) {
+  const nearest = [...aircraft]
+    .sort((a, b) => distanceKm(center, a) - distanceKm(center, b))
+    .slice(0, MAX_LISTED);
+
   return (
     <aside className="sidebar">
       <div className="sidebar__header">
         <h2 className="sidebar__title">Voos monitorados</h2>
-        <span className="sidebar__count">{MOCK_FLIGHTS.length}</span>
+        <span className="sidebar__count">{aircraft.length}</span>
       </div>
 
+      {loading && aircraft.length === 0 && (
+        <div className="sidebar__state">Buscando aeronaves na região…</div>
+      )}
+
+      {error && (
+        <div className="sidebar__state sidebar__state--error">{error}</div>
+      )}
+
+      {!loading && !error && nearest.length === 0 && (
+        <div className="sidebar__state">Nenhuma aeronave encontrada nesta área do mapa.</div>
+      )}
+
       <ul className="flight-list">
-        {MOCK_FLIGHTS.map((flight) => (
-          <li key={flight.callsign} className="flight-card">
+        {nearest.map((a) => (
+          <li key={a.icao24} className="flight-card">
             <div className="flight-card__top">
-              <span className="flight-card__callsign">{flight.callsign}</span>
-              <span className={`flight-card__status flight-card__status--${flight.status}`}>
-                {STATUS_LABEL[flight.status]}
+              <span className="flight-card__callsign">{a.callsign}</span>
+              <span
+                className={`flight-card__status flight-card__status--${a.onGround ? "pousado" : "em-voo"}`}
+              >
+                {a.onGround ? "Em solo" : "Em voo"}
               </span>
             </div>
             <div className="flight-card__route">
-              <span>{flight.origin}</span>
+              <span>{a.originCountry}</span>
               <span className="flight-card__route-line" />
-              <span>{flight.destination}</span>
+              <span>{distanceKm(center, a).toFixed(0)} km</span>
             </div>
             <div className="flight-card__meta">
-              <span>{flight.aircraft}</span>
-              <span>{flight.altitude}</span>
-              <span>{flight.speed}</span>
+              <span>{a.icao24.toUpperCase()}</span>
+              <span>{formatAltitude(a.altitude)}</span>
+              <span>{formatSpeed(a.velocity)}</span>
             </div>
           </li>
         ))}
@@ -57,7 +85,9 @@ export default function Sidebar() {
 
       <div className="sidebar__footer">
         <span className="sidebar__footer-dot" />
-        Dados fictícios — integração com API ainda pendente
+        {lastUpdated
+          ? `OpenSky Network — atualizado às ${lastUpdated.toLocaleTimeString("pt-BR")}`
+          : "OpenSky Network — aguardando dados"}
       </div>
     </aside>
   );

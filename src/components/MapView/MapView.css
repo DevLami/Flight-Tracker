@@ -109,3 +109,68 @@
   height: 10px;
   background: var(--border-strong);
 }
+
+/* Status da última atualização / erro da OpenSky */
+.map-status {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 500;
+}
+
+.map-status__badge {
+  display: inline-block;
+  padding: 6px 10px;
+  background: rgba(14, 20, 28, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.map-status__badge--loading {
+  color: var(--accent-alt);
+  border-color: var(--accent-alt);
+}
+
+.map-status__badge--error {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* Ícone de avião — sem fundo/borda padrão do Leaflet */
+.aircraft-icon {
+  background: transparent !important;
+  border: none !important;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+}
+
+/* Popup do avião — tema escuro */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-panel) !important;
+}
+
+.aircraft-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.aircraft-popup strong {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 2px;
+}

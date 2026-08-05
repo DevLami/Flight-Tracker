@@ -30,6 +30,14 @@ npm run dev
 
 Abre em `http://localhost:5173`.
 
+> **Importante sobre a OpenSky Network**: a API deles não envia headers de CORS,
+> então o navegador bloqueia chamadas diretas (erro "Failed to fetch"). Por isso
+> o `vite.config.ts` tem um proxy (`/opensky-api` → `opensky-network.org`) que só
+> funciona com `npm run dev`. Se um dia isso for pra produção (`npm run build` +
+> deploy), vai ser necessário um proxy próprio (função serverless, Cloudflare
+> Worker, etc.) — o navegador não vai conseguir chamar a OpenSky direto em
+> nenhum ambiente.
+
 ## Próximos passos (v0.2+)
 
 - Conectar a uma API de posições de voo (ex.: OpenSky Network) e plotar aviões no mapa
