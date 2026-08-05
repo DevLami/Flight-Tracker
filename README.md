@@ -1,46 +1,49 @@
-# Flight Tracker (v0.1)
+# Flight Tracker
 
-Projeto de estágio — protótipo de interface de um flight tracker, inspirado em consoles de radar/ATC.
+Fiz este projeto para estudar React, TypeScript e integração com API. A ideia é acompanhar voos em um mapa usando uma interface mais próxima de uma tela de radar.
 
-## Stack
+## O que usei
 
-- React + TypeScript
+- React e TypeScript
 - Vite
-- Leaflet / react-leaflet (mapa, zoom e navegação — ainda sem aviões)
+- Leaflet e React Leaflet
+- API da OpenSky Network
 
-## Estrutura
+## Rodando o projeto
 
-```
-src/
-  components/
-    Header/      -> cabeçalho com marca e status
-    SearchBar/    -> busca flutuante sobre o mapa (ainda sem lógica de busca real)
-    Sidebar/      -> painel lateral com lista de voos (dados fictícios)
-    MapView/      -> mapa Leaflet com tema escuro e leitura de coordenadas
-  App.tsx          -> grid geral da página
-  index.css        -> tokens de cor/tipografia globais
-```
-
-## Como rodar
+Depois de baixar o repositório, instale as dependências:
 
 ```bash
 npm install
+```
+
+Em seguida, inicie o servidor:
+
+```bash
 npm run dev
 ```
 
-Abre em `http://localhost:5173`.
+O Vite vai mostrar o endereço no terminal. Geralmente é `http://localhost:5173`.
 
-> **Importante sobre a OpenSky Network**: a API deles não envia headers de CORS,
-> então o navegador bloqueia chamadas diretas (erro "Failed to fetch"). Por isso
-> o `vite.config.ts` tem um proxy (`/opensky-api` → `opensky-network.org`) que só
-> funciona com `npm run dev`. Se um dia isso for pra produção (`npm run build` +
-> deploy), vai ser necessário um proxy próprio (função serverless, Cloudflare
-> Worker, etc.) — o navegador não vai conseguir chamar a OpenSky direto em
-> nenhum ambiente.
+Para a consulta à OpenSky funcionar, crie um `credentials.json` na raiz do projeto com as credenciais da sua conta:
 
-## Próximos passos (v0.2+)
+```json
+{
+  "clientId": "seu-client-id",
+  "clientSecret": "seu-client-secret"
+}
+```
 
-- Conectar a uma API de posições de voo (ex.: OpenSky Network) e plotar aviões no mapa
-- Ligar a busca da SearchBar aos dados reais
-- Painel de detalhes ao clicar em um voo (na lista ou no mapa)
-- Estado de loading / erro de conexão com a API
+Esse arquivo fica só na sua máquina. Não vale a pena subir essas credenciais para o Git.
+
+## Organização
+
+```text
+src/
+  api/           comunicação com a OpenSky
+  app/           composição da tela principal
+  components/    mapa, cabeçalho, busca e painel lateral
+  hooks/         atualização periódica dos voos
+  types/         tipos usados pela API e pela interface
+```
+
