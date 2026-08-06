@@ -13,7 +13,7 @@ export default function App() {
   const [center, setCenter] = useState(INITIAL_CENTER);
   const [bbox, setBbox] = useState<BoundingBox | null>(null);
 
-  const { aircraft, loading, error, lastUpdated } = useAircraft(bbox);
+  const { aircraft, loading, error, lastUpdated, isMock } = useAircraft(bbox);
 
   return (
     <div className="app-shell">
@@ -24,6 +24,7 @@ export default function App() {
         loading={loading}
         error={error}
         lastUpdated={lastUpdated}
+        isMock={isMock}
         onCenterChange={setCenter}
         onBoundsChange={setBbox}
       />
@@ -33,6 +34,7 @@ export default function App() {
         loading={loading}
         error={error}
         lastUpdated={lastUpdated}
+        isMock={isMock}
       />
     </div>
   );

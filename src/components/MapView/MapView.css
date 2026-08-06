@@ -141,6 +141,11 @@
   border-color: var(--danger);
 }
 
+.map-status__badge--mock {
+  color: var(--accent-alt);
+  border-color: var(--accent-alt);
+}
+
 /* Ícone de avião — sem fundo/borda padrão do Leaflet */
 .aircraft-icon {
   background: transparent !important;

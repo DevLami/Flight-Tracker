@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Marker, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
 import type { Aircraft } from "../../types/opensky";
@@ -29,10 +30,10 @@ function formatSpeed(mps: number | null) {
   return `${knots} kt`;
 }
 
-export default function AircraftMarker({ aircraft }: { aircraft: Aircraft }) {
+function AircraftMarker({ aircraft, position }: { aircraft: Aircraft; position: [number, number] }) {
   return (
     <Marker
-      position={[aircraft.latitude, aircraft.longitude]}
+      position={position}
       icon={createPlaneIcon(aircraft.heading ?? 0, aircraft.onGround)}
     >
       <Popup>
@@ -47,3 +48,21 @@ export default function AircraftMarker({ aircraft }: { aircraft: Aircraft }) {
     </Marker>
   );
 }
+
+// memo evita re-renderizar (e recriar o ícone SVG) de marcadores cujos
+// dados não mudaram entre uma atualização e outra da lista de aviões.
+export default memo(AircraftMarker, (prev, next) => {
+  const a = prev.aircraft;
+  const b = next.aircraft;
+  return (
+    a.icao24 === b.icao24 &&
+    a.latitude === b.latitude &&
+    a.longitude === b.longitude &&
+    a.heading === b.heading &&
+    a.altitude === b.altitude &&
+    a.velocity === b.velocity &&
+    a.onGround === b.onGround &&
+    prev.position[0] === next.position[0] &&
+    prev.position[1] === next.position[1]
+  );
+});

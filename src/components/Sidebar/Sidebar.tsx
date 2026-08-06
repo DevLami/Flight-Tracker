@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import "./Sidebar.css";
 import type { Aircraft } from "../../types/opensky";
+import { distanceKm } from "../../utils/geo";
 
 const MAX_LISTED = 15;
 
@@ -9,19 +11,7 @@ interface SidebarProps {
   loading: boolean;
   error: string | null;
   lastUpdated: Date | null;
-}
-
-// Distância aproximada em km entre duas coordenadas (fórmula de Haversine).
-function distanceKm(a: { lat: number; lng: number }, b: { latitude: number; longitude: number }) {
-  const R = 6371;
-  const dLat = ((b.latitude - a.lat) * Math.PI) / 180;
-  const dLon = ((b.longitude - a.lng) * Math.PI) / 180;
-  const lat1 = (a.lat * Math.PI) / 180;
-  const lat2 = (b.latitude * Math.PI) / 180;
-
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  isMock: boolean;
 }
 
 function formatAltitude(meters: number | null) {
@@ -34,10 +24,16 @@ function formatSpeed(mps: number | null) {
   return `${Math.round(mps * 1.94384)} kt`;
 }
 
-export default function Sidebar({ aircraft, center, loading, error, lastUpdated }: SidebarProps) {
-  const nearest = [...aircraft]
-    .sort((a, b) => distanceKm(center, a) - distanceKm(center, b))
-    .slice(0, MAX_LISTED);
+export default function Sidebar({ aircraft, center, loading, error, lastUpdated, isMock }: SidebarProps) {
+  // useMemo evita reordenar centenas de itens a cada render — só recalcula
+  // quando a lista de aviões ou o centro do mapa realmente mudam.
+  const nearest = useMemo(
+    () =>
+      [...aircraft]
+        .sort((a, b) => distanceKm(center, a) - distanceKm(center, b))
+        .slice(0, MAX_LISTED),
+    [aircraft, center]
+  );
 
   return (
     <aside className="sidebar">
@@ -50,11 +46,11 @@ export default function Sidebar({ aircraft, center, loading, error, lastUpdated 
         <div className="sidebar__state">Buscando aeronaves na região…</div>
       )}
 
-      {error && (
+      {error && !isMock && (
         <div className="sidebar__state sidebar__state--error">{error}</div>
       )}
 
-      {!loading && !error && nearest.length === 0 && (
+      {!loading && !error && !isMock && nearest.length === 0 && (
         <div className="sidebar__state">Nenhuma aeronave encontrada nesta área do mapa.</div>
       )}
 
@@ -84,10 +80,12 @@ export default function Sidebar({ aircraft, center, loading, error, lastUpdated 
       </ul>
 
       <div className="sidebar__footer">
-        <span className="sidebar__footer-dot" />
-        {lastUpdated
-          ? `OpenSky Network — atualizado às ${lastUpdated.toLocaleTimeString("pt-BR")}`
-          : "OpenSky Network — aguardando dados"}
+        <span className={`sidebar__footer-dot ${isMock ? "sidebar__footer-dot--mock" : ""}`} />
+        {isMock
+          ? "Modo demonstração — sem conexão com a OpenSky Network"
+          : lastUpdated
+            ? `OpenSky Network — atualizado às ${lastUpdated.toLocaleTimeString("pt-BR")}`
+            : "OpenSky Network — aguardando dados"}
       </div>
     </aside>
   );

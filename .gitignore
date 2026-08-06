@@ -2,7 +2,6 @@ node_modules
 dist
 dist-ssr
 *.local
-credentials.json
 
 .vscode/*
 !.vscode/extensions.json

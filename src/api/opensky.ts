@@ -27,12 +27,7 @@ function normalize(raw: OpenSkyStateVectorRaw): Aircraft | null {
   };
 }
 
-/**
- * Busca os aviões dentro de uma área (bounding box).
- * Sem autenticação, a OpenSky limita bastante as chamadas (poucas por minuto),
- * então é importante sempre restringir por bbox em vez de buscar o globo todo.
- */
-export async function fetchAircraftInBounds(bbox: BoundingBox, signal?: AbortSignal): Promise<Aircraft[]> {
+async function fetchSingleBox(bbox: BoundingBox, signal?: AbortSignal): Promise<Aircraft[]> {
   const params = new URLSearchParams({
     lamin: bbox.latMin.toFixed(4),
     lamax: bbox.latMax.toFixed(4),
@@ -60,7 +55,33 @@ export async function fetchAircraftInBounds(bbox: BoundingBox, signal?: AbortSig
   const data: OpenSkyStatesResponse = await res.json();
   if (!data.states) return [];
 
-  return data.states
-    .map(normalize)
-    .filter((a): a is Aircraft => a !== null);
+  return data.states.map(normalize).filter((a): a is Aircraft => a !== null);
+}
+
+/**
+ * Busca os aviões dentro de uma área (bounding box).
+ * Sem autenticação, a OpenSky limita bastante as chamadas (poucas por minuto),
+ * então é importante sempre restringir por bbox em vez de buscar o globo todo.
+ *
+ * Quando a área visível do mapa cruza o antimeridiano (±180°) — por exemplo,
+ * olhando o Pacífico entre Japão e EUA — lonMin fica maior que lonMax depois
+ * de normalizado. Nesse caso não dá pra pedir uma única caixa pra OpenSky;
+ * a busca é dividida em duas (do lado oeste até 180°, e de -180° até o lado
+ * leste) e o resultado é combinado, removendo duplicatas pelo icao24.
+ */
+export async function fetchAircraftInBounds(bbox: BoundingBox, signal?: AbortSignal): Promise<Aircraft[]> {
+  const crossesAntimeridian = bbox.lonMin > bbox.lonMax;
+
+  if (!crossesAntimeridian) {
+    return fetchSingleBox(bbox, signal);
+  }
+
+  const [west, east] = await Promise.all([
+    fetchSingleBox({ ...bbox, lonMax: 180 }, signal),
+    fetchSingleBox({ ...bbox, lonMin: -180 }, signal),
+  ]);
+
+  const merged = new Map<string, Aircraft>();
+  for (const a of [...west, ...east]) merged.set(a.icao24, a);
+  return [...merged.values()];
 }
